@@ -56,11 +56,11 @@ kotlin {
 }
 
 android {
-    namespace = "pl.lipov.technologieinternetowe"
+    namespace = "pl.kasiagaw.technologieinternetowe"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "pl.lipov.technologieinternetowe"
+        applicationId = "pl.kasiagaw.technologieinternetowe"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -88,11 +88,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "pl.lipov.technologieinternetowe.MainKt"
+        mainClass = "pl.kasiagaw.technologieinternetowe.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "pl.lipov.technologieinternetowe"
+            packageName = "pl.kasiagaw.technologieinternetowe"
             packageVersion = "1.0.0"
         }
     }
