@@ -6,5 +6,6 @@ data class ClimateZone(
     val temperature: String,
     val vegetation: String,
     val animals: String,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val imageUrl: String = ""
 )

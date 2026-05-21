@@ -1,80 +1,71 @@
-package pl.kasiagaw.server
-
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-
-// NOWE IMPORTY DLA BAZY DANYCH:
+import io.ktor.server.http.content.staticResources
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.kasiagaw.server.model.*
+import kotlinx.serialization.Serializable
+
+// 1. Definicja tabeli w bazie danych
+object ClimateZonesTable : Table() {
+    val id = integer("id").autoIncrement()
+    val name = varchar("name", 100)
+    val description = text("description")
+    val averageTemp = double("average_temp")
+    val imageUrl = varchar("image_url", 255)
+    override val primaryKey = PrimaryKey(id)
+}
+
+// 2. Model danych dla serwera (musi pasować do tego w commonMain!)
+@Serializable
+data class ClimateZone(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val averageTemp: Double,
+    val imageUrl: String
+)
 
 fun main() {
-    // NOWE: Łączymy się z bazą danych H2 (w pamięci RAM)
+    // 3. Połączenie z bazą danych H2 (w pamięci)
     Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
 
-    // NOWE: Tworzymy tabelę i dodajemy przykładowe dane na start
+    // 4. Utworzenie tabeli i dodanie danych
     transaction {
         SchemaUtils.create(ClimateZonesTable)
 
-        ClimateZonesTable.insert {
-            it[name] = "Równikow"
-            it[description] = "Wysoka temperatura i wilgotność przez cały rok. Brak wyraźnych pór roku."
-            it[averageTemp] = 27.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Podrównikowy"
-            it[description] = "Dwie pory roku: sucha i deszczowa. Wysokie temperatury."
-            it[averageTemp] = 25.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Zwrotnikowy"
-            it[description] = "Bardzo gorące lato, duże dobowe amplitudy temperatur. Często pustynie."
-            it[averageTemp] = 23.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Podzwrotnikowy"
-            it[description] = "Ciepłe, suche lata i łagodne, wilgotne zimy (np. klimat śródziemnomorski)."
-            it[averageTemp] = 16.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Umiarkowany"
-            it[description] = "Wyraźne cztery pory roku. Zmienne warunki pogodowe."
-            it[averageTemp] = 9.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Okołobiegunowa (Subpolarna)"
-            it[description] = "Długie, mroźne zimy i krótkie, chłodne lata. Wieloletnia zmarzlina."
-            it[averageTemp] = -5.0
-        }
-        ClimateZonesTable.insert {
-            it[name] = "Biegunowa (Polarna)"
-            it[description] = "Zawsze zimno, temperatury rzadko przekraczają 0 stopni. Pustynie lodowe."
-            it[averageTemp] = -20.0
+        // Lista stref. Upewnij się, że nazwy plików ".jpg" zgadzają się z tymi w folderze 'static'!
+        val zonesData = listOf(
+            Triple("Równikowa", "Gorąco i wilgotno przez cały rok.", 27.0) to "rownik.jpg",
+            Triple("Zwrotnikowa", "Gorące lato, pustynie.", 23.0) to "zwrotnikowy.jpg",
+            Triple("Podzwrotnikowa", "Ciepłe suche lato, łagodna zima.", 16.0) to "podzwrotnikowy.jpg",
+            Triple("Umiarkowana", "Cztery pory roku.", 9.0) to "umiarkowany.jpg",
+            Triple("Biegunowa", "Zimno, pustynie lodowe.", -20.0) to "polarny.jpg"
+        )
+
+        zonesData.forEach { (info, imageFileName) ->
+            ClimateZonesTable.insert {
+                it[name] = info.first
+                it[description] = info.second
+                it[averageTemp] = info.third
+                // Używamy Twojego IP! Jeśli zmieniłaś sieć Wi-Fi, trzeba będzie je zaktualizować.
+                it[imageUrl] = "http://172.20.10.2:8080/static/$imageFileName"
+            }
         }
     }
 
-    embeddedServer(Netty, port = 8080) {
+    // 5. Uruchomienie serwera
+    embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         install(ContentNegotiation) {
             json()
         }
         routing {
-            // TWÓJ STARY KOD (zostaje bez zmian!)
-            get("/") {
-                call.respondText("API działa!")
-            }
-            get("/hello/{name}") {
-                val name = call.parameters["name"] ?: "unknown"
-                call.respond(mapOf("message" to "Hello, $name"))
-            }
-
-            // NOWY ENDPOINT: Zwraca listę stref z bazy danych
+            // Ten endpoint zwraca listę stref klimatycznych
             get("/zones") {
                 val zones = transaction {
                     ClimateZonesTable.selectAll().map {
@@ -82,12 +73,16 @@ fun main() {
                             id = it[ClimateZonesTable.id],
                             name = it[ClimateZonesTable.name],
                             description = it[ClimateZonesTable.description],
-                            averageTemp = it[ClimateZonesTable.averageTemp]
+                            averageTemp = it[ClimateZonesTable.averageTemp],
+                            imageUrl = it[ClimateZonesTable.imageUrl]
                         )
                     }
                 }
                 call.respond(zones)
             }
+
+            // Ten wpis "otwiera" folder static, żeby aplikacja mogła pobrać zdjęcia
+            staticResources("/static", "static")
         }
     }.start(wait = true)
 }

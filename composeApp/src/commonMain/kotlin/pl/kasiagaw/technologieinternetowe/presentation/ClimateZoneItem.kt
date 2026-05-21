@@ -22,19 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.jetbrains.compose.resources.painterResource
 import pl.kasiagaw.technologieinternetowe.domain.model.ClimateZone
 import technologieinternetowe.composeapp.generated.resources.*
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
 
-@Composable
-fun getZoneImage(zoneId: String) = when(zoneId) {
-    "rownik" -> Res.drawable.rownik
-    "zwrotnikowy" -> Res.drawable.zwrotnikowy
-    "podzwrotnikowy" -> Res.drawable.podzwrotnikowy
-    "umiarkowany" -> Res.drawable.umiarkowany
-    "polarny" -> Res.drawable.polarny
-    else -> Res.drawable.mapa
-}
+
 
 @Composable
 fun ClimateZoneItem(
@@ -54,14 +47,21 @@ fun ClimateZoneItem(
         Column(
             modifier = Modifier.background(Color(0xFFF5F5F5)) // Bardzo jasny, nowoczesny szary
         ) {
-            Image(
-                painter = painterResource(getZoneImage(zone.id)),
+            KamelImage(
+                resource = asyncPainterResource(zone.imageUrl),
                 contentDescription = zone.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                onLoading = { progress ->
+                    println("Ładowanie zdjęcia: ${zone.imageUrl}, postęp: $progress")
+                },
+                onFailure = { exception ->
+                    println("BŁĄD ŁADOWANIA: ${exception.message}")
+                }
             )
+
 
             Column(modifier = Modifier.padding(12.dp)) {
                 // Górny rząd ze strzałką

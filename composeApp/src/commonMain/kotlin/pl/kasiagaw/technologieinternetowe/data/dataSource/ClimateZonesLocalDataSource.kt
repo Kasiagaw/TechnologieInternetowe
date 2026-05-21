@@ -16,14 +16,16 @@ object ClimateZonesLocalDataSource {
                 name = "Strefa Równikowa",
                 temperature = "Ok. 25-28°C przez cały rok",
                 vegetation = "Wilgotne lasy równikowe (dżungla)",
-                animals = "Małpy, jaguary, papugi"
+                animals = "Małpy, jaguary, papugi",
+                imageUrl = "http://10.0.2.2:8080/static/rownik.jpg"
             ),
             ClimateZone(
                 id = "zwrotnikowy",
                 name = "Strefa Zwrotnikowa",
                 temperature = "Gorące dni, bardzo zimne noce",
                 vegetation = "Pustynie i półpustynie, kaktusy",
-                animals = "Wielbłądy, skorpiony, fenki"
+                animals = "Wielbłądy, skorpiony, fenki",
+                imageUrl = "http://10.0.2.2:8080/static/zwrotnikowy.jpg"
             ),
 
             ClimateZone(
@@ -31,21 +33,24 @@ object ClimateZonesLocalDataSource {
                 name = "Strefa Podzwrotnikowa",
                 temperature = "Gorące, suche lata i łagodne zimy",
                 vegetation = "Roślinność śródziemnomorska, cytrusy, oliwki",
-                animals = "Danieli, muflony, liczne owady i gady"
+                animals = "Danieli, muflony, liczne owady i gady",
+                imageUrl = "http://10.0.2.2:8080/static/podzwrotnikowy.jpg"
             ),
             ClimateZone(
                 id = "umiarkowany",
                 name = "Strefa Umiarkowana",
                 temperature = "Wyraźne 4 pory roku",
                 vegetation = "Lasy liściaste i mieszane",
-                animals = "Sarny, dziki, niedźwiedzie, lisy"
+                animals = "Sarny, dziki, niedźwiedzie, lisy",
+                imageUrl = "http://10.0.2.2:8080/static/umiarkowany.jpg"
             ),
             ClimateZone(
                 id = "polarny",
                 name = "Strefa Polarna",
                 temperature = "Bardzo niskie temperatury, mroźne i długie zimy",
                 vegetation = "Tundra, mchy, porosty lub pustynie lodowe",
-                animals = "Niedźwiedzie polarne, morsy, foki, pingwiny"
+                animals = "Niedźwiedzie polarne, morsy, foki, pingwiny",
+                imageUrl = "http://10.0.2.2:8080/static/polarny.jpg"
             )
         )
     )

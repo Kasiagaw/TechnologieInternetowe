@@ -1,6 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -13,7 +10,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
     }
     
@@ -23,17 +20,16 @@ kotlin {
         browser()
         binaries.executable()
     }
-    
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+
     
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation("io.ktor:ktor-client-okhttp:2.3.11")
+            implementation("media.kamel:kamel-image:0.9.5")
+
+
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -44,13 +40,21 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation("media.kamel:kamel-image:0.9.0")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+
         }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation("io.ktor:ktor-client-cio:2.3.11")
+        }
+
+        jsMain.dependencies {
         }
     }
 }
@@ -91,7 +95,12 @@ compose.desktop {
         mainClass = "pl.kasiagaw.technologieinternetowe.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            // Używamy pełnej ścieżki, żeby uniknąć błędów importu
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb
+            )
             packageName = "pl.kasiagaw.technologieinternetowe"
             packageVersion = "1.0.0"
         }
