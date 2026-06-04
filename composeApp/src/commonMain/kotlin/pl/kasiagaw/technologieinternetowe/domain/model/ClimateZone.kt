@@ -1,5 +1,8 @@
 package pl.kasiagaw.technologieinternetowe.domain.model
+import kotlinx.serialization.Serializable
 
+// @Serializable potrzebne do parsowania JSON z serwera
+@Serializable
 data class ClimateZone(
     val id: String,
     val name: String,

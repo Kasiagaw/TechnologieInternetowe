@@ -1,3 +1,5 @@
+package pl.kasiagaw.server
+
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
@@ -9,71 +11,88 @@ import io.ktor.server.routing.routing
 import io.ktor.server.http.content.staticResources
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import kotlinx.serialization.Serializable
-
-// 1. Definicja tabeli w bazie danych
-object ClimateZonesTable : Table() {
-    val id = integer("id").autoIncrement()
-    val name = varchar("name", 100)
-    val description = text("description")
-    val averageTemp = double("average_temp")
-    val imageUrl = varchar("image_url", 255)
-    override val primaryKey = PrimaryKey(id)
-}
-
-// 2. Model danych dla serwera (musi pasować do tego w commonMain!)
-@Serializable
-data class ClimateZone(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val averageTemp: Double,
-    val imageUrl: String
-)
+import pl.kasiagaw.server.model.ClimateZone
+import pl.kasiagaw.server.model.ClimateZonesTable
 
 fun main() {
-    // 3. Połączenie z bazą danych H2 (w pamięci)
+    // 1. Połączenie z bazą danych H2 (w pamięci RAM)
     Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
 
-    // 4. Utworzenie tabeli i dodanie danych
+    // 2. Utworzenie tabeli i dodanie danych
     transaction {
         SchemaUtils.create(ClimateZonesTable)
 
-        // Lista stref. Upewnij się, że nazwy plików ".jpg" zgadzają się z tymi w folderze 'static'!
         val zonesData = listOf(
-            Triple("Równikowa", "Gorąco i wilgotno przez cały rok.", 27.0) to "rownik.jpg",
-            Triple("Zwrotnikowa", "Gorące lato, pustynie.", 23.0) to "zwrotnikowy.jpg",
-            Triple("Podzwrotnikowa", "Ciepłe suche lato, łagodna zima.", 16.0) to "podzwrotnikowy.jpg",
-            Triple("Umiarkowana", "Cztery pory roku.", 9.0) to "umiarkowany.jpg",
-            Triple("Biegunowa", "Zimno, pustynie lodowe.", -20.0) to "polarny.jpg"
+            ClimateZone(
+                id = "rownik",
+                name = "Strefa Równikowa",
+                temperature = "Ok. 25-28°C przez cały rok",
+                vegetation = "Wilgotne lasy równikowe (dżungla)",
+                animals = "Małpy, jaguary, papugi",
+                imageUrl = "http://10.0.2.2:8080/static/rownik.jpg"
+            ),
+            ClimateZone(
+                id = "zwrotnikowy",
+                name = "Strefa Zwrotnikowa",
+                temperature = "Gorące dni, bardzo zimne noce",
+                vegetation = "Pustynie i półpustynie, kaktusy",
+                animals = "Wielbłądy, skorpiony, fenki",
+                imageUrl = "http://10.0.2.2:8080/static/zwrotnikowy.jpg"
+            ),
+            ClimateZone(
+                id = "podzwrotnikowy",
+                name = "Strefa Podzwrotnikowa",
+                temperature = "Gorące, suche lata i łagodne zimy",
+                vegetation = "Roślinność śródziemnomorska, cytrusy, oliwki",
+                animals = "Danieli, muflony, liczne owady i gady",
+                imageUrl = "http://10.0.2.2:8080/static/podzwrotnikowy.jpg"
+            ),
+            ClimateZone(
+                id = "umiarkowany",
+                name = "Strefa Umiarkowana",
+                temperature = "Wyraźne 4 pory roku",
+                vegetation = "Lasy liściaste i mieszane",
+                animals = "Sarny, dziki, niedźwiedzie, lisy",
+                imageUrl = "http://10.0.2.2:8080/static/umiarkowany.jpg"
+            ),
+            ClimateZone(
+                id = "polarny",
+                name = "Strefa Polarna",
+                temperature = "Bardzo niskie temperatury, mroźne i długie zimy",
+                vegetation = "Tundra, mchy, porosty lub pustynie lodowe",
+                animals = "Niedźwiedzie polarne, morsy, foki, pingwiny",
+                imageUrl = "http://10.0.2.2:8080/static/polarny.jpg"
+            )
         )
 
-        zonesData.forEach { (info, imageFileName) ->
+        zonesData.forEach { zone ->
             ClimateZonesTable.insert {
-                it[name] = info.first
-                it[description] = info.second
-                it[averageTemp] = info.third
-                // Używamy Twojego IP! Jeśli zmieniłaś sieć Wi-Fi, trzeba będzie je zaktualizować.
-                it[imageUrl] = "http://172.20.10.2:8080/static/$imageFileName"
+                it[id] = zone.id
+                it[name] = zone.name
+                it[temperature] = zone.temperature
+                it[vegetation] = zone.vegetation
+                it[animals] = zone.animals
+                it[imageUrl] = zone.imageUrl
             }
         }
     }
 
-    // 5. Uruchomienie serwera
+    // 3. Uruchomienie serwera na porcie 8080
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         install(ContentNegotiation) {
             json()
         }
         routing {
-            // Ten endpoint zwraca listę stref klimatycznych
+            // Endpoint zwracający listę stref jako JSON
             get("/zones") {
                 val zones = transaction {
                     ClimateZonesTable.selectAll().map {
                         ClimateZone(
                             id = it[ClimateZonesTable.id],
                             name = it[ClimateZonesTable.name],
-                            description = it[ClimateZonesTable.description],
-                            averageTemp = it[ClimateZonesTable.averageTemp],
+                            temperature = it[ClimateZonesTable.temperature],
+                            vegetation = it[ClimateZonesTable.vegetation],
+                            animals = it[ClimateZonesTable.animals],
                             imageUrl = it[ClimateZonesTable.imageUrl]
                         )
                     }
@@ -81,7 +100,7 @@ fun main() {
                 call.respond(zones)
             }
 
-            // Ten wpis "otwiera" folder static, żeby aplikacja mogła pobrać zdjęcia
+            // Serwowanie obrazków statycznych z folderu resources/static
             staticResources("/static", "static")
         }
     }.start(wait = true)

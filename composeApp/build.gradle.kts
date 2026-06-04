@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.serialization) // potrzebne do @Serializable na modelu
 }
 
 kotlin {
@@ -26,7 +27,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
-            implementation("io.ktor:ktor-client-okhttp:2.3.11")
+            implementation("io.ktor:ktor-client-okhttp:2.3.11")       // silnik HTTP dla Androida
             implementation("media.kamel:kamel-image:0.9.5")
 
 
@@ -42,6 +43,12 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation("media.kamel:kamel-image:0.9.0")
 
+
+            // Ktor client - wspólny dla wszystkich platform
+                implementation("io.ktor:ktor-client-core:2.3.11")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -55,6 +62,7 @@ kotlin {
         }
 
         jsMain.dependencies {
+            implementation("io.ktor:ktor-client-js:2.3.11")            // silnik HTTP dla Web/J
         }
     }
 }

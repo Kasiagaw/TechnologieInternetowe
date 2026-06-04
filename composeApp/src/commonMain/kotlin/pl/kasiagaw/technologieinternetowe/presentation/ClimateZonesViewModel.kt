@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import pl.kasiagaw.technologieinternetowe.data.repository.ClimateZonesLocalRepository
+import pl.kasiagaw.technologieinternetowe.data.repository.ClimateZonesRemoteRepository
 import pl.kasiagaw.technologieinternetowe.domain.model.ClimateZone
 import pl.kasiagaw.technologieinternetowe.domain.useCase.GetAllZonesUseCase
 import pl.kasiagaw.technologieinternetowe.domain.useCase.ToggleZoneFavoriteUseCase
@@ -22,14 +22,17 @@ class ClimateZonesViewModel : ViewModel() {
         private const val SEARCH_THRESHOLD = 3 // minimalna liczba znaków do wyszukiwania
     }
 
-    // Podłączamy nasze Use Case'y
+    // Używamy RemoteRepository zamiast LocalRepository
+    private val remoteRepository = ClimateZonesRemoteRepository()
+
     private val getAllZonesUseCase = GetAllZonesUseCase(
-        repository = ClimateZonesLocalRepository()
+        repository = remoteRepository
     )
 
     private val toggleZoneFavoriteUseCase = ToggleZoneFavoriteUseCase(
-        repository = ClimateZonesLocalRepository()
+        repository = remoteRepository
     )
+
     // Stan pola wyszukiwania – co aktualnie wpisał użytkownik
     val searchQuery = MutableStateFlow("")
 
@@ -61,6 +64,13 @@ class ClimateZonesViewModel : ViewModel() {
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
         initialValue = emptyList()
     )
+
+    // Pobieramy dane z serwera od razu po utworzeniu ViewModelu
+    init {
+        viewModelScope.launch {
+            remoteRepository.refresh()
+        }
+    }
 
     // Wywoływane za każdym razem gdy użytkownik coś wpisuje w pole wyszukiwania
     fun handleSearchQueryChange(query: String) {
